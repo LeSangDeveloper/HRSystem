@@ -1,0 +1,114 @@
+﻿@*
+    首頁
+    呈現一些目錄(Category)
+*@
+@page
+@{
+    Layout = null;
+    var title = "HR System - Home";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@title</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Bootstrap CSS -->
+    <link href="/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+    <link href="/lib/fontawesome/css/all.css" rel="stylesheet" />
+    <link href="/css/common.css" rel="stylesheet" />
+</head>
+
+<body class="bg-light">
+
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">HR System</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mt-5">
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+
+                        <h1 class="text-primary mb-3">
+                            Welcome to HR System
+                        </h1>
+
+                        <p class="lead text-muted">
+                            Manage employees, departments, and HR operations efficiently.
+                        </p>
+
+                        <hr />
+
+                        <div class="row mt-4 d-flex justify-content-center align-items-center">
+                            
+                            <div class="col-md-4">
+                                <div class="card border border-1 shadow-sm">
+                                    <div class="card-body">
+                                        <h5>Employees</h5>
+                                        <p class="text-muted">Employee data</p>
+                                        <a asp-page="/Employees/Index"
+                                           class="btn btn-outline-primary btn-sm">
+                                            Open
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="card border border-1 shadow-sm">
+                                    <div class="card-body">
+                                        <h5>Departments</h5>
+                                        <p class="text-muted">Department data</p>
+                                        <button class="btn btn-outline-secondary btn-sm" disabled>
+                                            Coming Soon
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="card border border-1 shadow-sm">
+                                    <div class="card-body">
+                                        <h5>Recruitment</h5>
+                                        <p class="text-muted">Recruitment data</p>
+                                        <button class="btn btn-outline-secondary btn-sm" disabled>
+                                            Coming Soon
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-muted mt-5 mb-3">
+        © @DateTime.Now.Year HR System
+    </footer>
+
+    <!-- jQuery first -->
+    <script src="/lib/jquery/dist/jquery.min.js"></script>
+
+    <!-- Then Bootstrap 4 JS (do NOT use bootstrap.bundle.js from v5) -->
+    <script src="/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,274 @@
+﻿@*
+    新增考勤時間紀錄
+*@
+@page
+@model AttendanceCreateModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create Attendance Record";
+
+    // Breadcrumb
+    ViewData["Breadcrumb"] = new List<(string Title, string Url, bool Active)>
+    {
+        ("Employee", "/Employees/Index", false),
+        ("Attendance", "/Employees/Attendance/Index", true)
+    };
+
+    // Function-level navigation
+    ViewBag.FunctionNav = new List<(string Title, string Url, bool Active)>
+    {
+        ("Attendance", "/Employees/Attendance/Index", false),
+        ("Create", "/Employees/Attendance/Create", true),
+    };
+}
+
+<h2>Create Attendance Record</h2>
+
+@*
+    @(Model.ValidationResult.FieldNames.Contains(nameof(Model.Attendance.EmployeeId)) ? "has-error" : "")":若新增資料有問題, 在對應Input加has-error
+*@
+<form method="post" id="createForm">
+    <div class="mb-3">
+        <label for="employeeId" class="form-label">Employee</label>
+        <select asp-for="Attendance.EmployeeId" class="form-select @(Model.ValidationResult.FieldNames.Contains(nameof(Model.Attendance.EmployeeId)) ? "has-error" : "")" asp-items="@(ViewData["Employees"] as SelectList)">
+            <option value="">-- Select Employee --</option>
+        </select>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label asp-for="Attendance.StartTime" class="form-label">Start Time</label>
+            <input asp-format="{0:yyyy-MM-ddTHH:mm}" asp-for="Attendance.StartTime" type="datetime-local" class="form-control @(Model.ValidationResult.FieldNames.Contains(nameof(Model.Attendance.StartTime)) ? "has-error" : "")" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Attendance.EndTime" class="form-label">End Time</label>
+            <input asp-format="{0:yyyy-MM-ddTHH:mm}" asp-for="Attendance.EndTime" type="datetime-local" class="form-control @(Model.ValidationResult.FieldNames.Contains(nameof(Model.Attendance.EndTime)) ? "has-error" : "")" />
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Attendance.Note" class="form-label">Note</label>
+        <input asp-for="Attendance.Note" class="form-control @(Model.ValidationResult.FieldNames.Contains(nameof(Model.Attendance.Note)) ? "has-error" : "")" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Attendance.IsHolidayWork" class="form-label">Holiday Work</label>
+        <select asp-for="Attendance.IsHolidayWork" class="form-select">
+            <option value="N">N</option>
+            <option value="Y">Y</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Save</button>
+    <a asp-page="/Employees/Attendance/Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+<!-- Modal for Errors -->
+@*
+    若處理資料有錯誤會Show在這裡
+*@
+@if (Model.ValidationResult.HasErrors)
+{
+    <div class="modal fade show" id="errorModal" style="display:block;" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Validation Errors</h5>
+                </div>
+                <div class="modal-body">
+                    <ul>
+                        @foreach (var msg in Model.ValidationResult.Messages)
+                        {
+                            <li>@msg</li>
+                        }
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show" style="opacity:0.7"></div>
+}
+
+@section Scripts {
+    <script>
+        function closeModal() {
+            const modal = document.getElementById('errorModal');
+            if (modal) modal.remove();
+
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        }
+    </script>
+}
+
+@functions {
+
+    /// <summary>
+    /// 新增考勤紀錄的 PageModel
+    /// </summary>
+    public class AttendanceCreateModel : PageModel
+    {
+        private readonly DataContext _context;
+
+        /// <summary>
+        /// 綁定的考勤資料 ViewModel
+        /// </summary>
+        [BindProperty]
+        public AttendanceCreateViewModel Attendance { get; set; }
+
+        /// <summary>
+        /// 驗證結果
+        /// </summary>
+        public AttendanceCreateValidationResult ValidationResult { get; set; } = new AttendanceCreateValidationResult();
+
+        /// <summary>
+        /// 建構子：注入資料上下文
+        /// </summary>
+        /// <param name="context">資料上下文</param>
+        public AttendanceCreateModel(DataContext context)
+        {
+            _context = context;
+        }
+
+        /// <summary>
+        /// GET 請求：初始化表單及下拉選單
+        /// </summary>
+        public void OnGet()
+        {
+            ViewData["Employees"] = new SelectList(
+                _context.Employees.Select(e => new { Id = e.Id, Name = $"{e.Id} - {e.Name}" }),
+                "Id",
+                "Name"
+            );
+
+            Attendance ??= new AttendanceCreateViewModel
+                {
+                    StartTime = DateTime.Now,
+                    EndTime = DateTime.Now.AddHours(8),
+                    IsHolidayWork = "N"
+                };
+        }
+
+        /// <summary>
+        /// POST 請求：新增考勤紀錄，包含驗證邏輯
+        /// </summary>
+        /// <returns>若驗證失敗回傳 Page，成功則導向 Index 頁面</returns>
+        public async Task<IActionResult> OnPostAsync()
+        {
+            // 基本驗證
+            if (Attendance == null || Attendance.EmployeeId == 0)
+                ValidationResult.Add(nameof(Attendance.EmployeeId), "Please select an employee.");
+
+            if (Attendance.StartTime == default)
+                ValidationResult.Add(nameof(Attendance.StartTime), "Please enter the start time.");
+
+            if (Attendance.EndTime == default)
+                ValidationResult.Add(nameof(Attendance.EndTime), "Please enter the end time.");
+
+            // 上班時間需早於下班時間
+            if (Attendance.StartTime != default && Attendance.EndTime != default && Attendance.StartTime >= Attendance.EndTime)
+            {
+                ValidationResult.Add(nameof(Attendance.StartTime), "Start time must be earlier than end time.");
+                ValidationResult.Add(nameof(Attendance.EndTime), "Start time must be earlier than end time.");
+            }
+
+            // 同一天檢查
+            if (Attendance.StartTime.Date != Attendance.EndTime.Date)
+            {
+                ValidationResult.Add(nameof(Attendance.StartTime), "Start time and end time must be on the same day.");
+                ValidationResult.Add(nameof(Attendance.EndTime), "Start time and end time must be on the same day.");
+            }
+
+            // 檢查重疊考勤
+            var existingAttendances = _context.Attendances
+                .Where(a => a.EmployeeId == Attendance.EmployeeId)
+                .ToList();
+
+            if (existingAttendances.Any(a => Attendance.StartTime < a.EndTime && Attendance.EndTime > a.StartTime))
+            {
+                ValidationResult.Add(nameof(Attendance.StartTime), "Attendance time conflicts with existing records.");
+                ValidationResult.Add(nameof(Attendance.EndTime), "Attendance time conflicts with existing records.");
+            }
+
+            if (ValidationResult.HasErrors)
+            {
+                OnGet(); // 重新載入下拉選單
+                return Page(); // 顯示錯誤 modal
+            }
+
+            // 儲存新紀錄
+            var employee = _context.Employees.FirstOrDefault(e => e.Id == Attendance.EmployeeId);
+            if (employee != null)
+            {
+                int newId = _context.Attendances.Any() ? _context.Attendances.Max(a => a.Id) + 1 : 1;
+
+                _context.Attendances.Add(new Attendance
+                    {
+                        Id = newId,
+                        EmployeeId = Attendance.EmployeeId,
+                        Employee = employee,
+                        StartTime = Attendance.StartTime,
+                        EndTime = Attendance.EndTime,
+                        Note = Attendance.Note,
+                        IsHolidayWork = Attendance.IsHolidayWork
+                    });
+
+                await _context.SaveAsync();
+            }
+
+            return RedirectToPage("/Employees/Attendance/Index");
+        }
+    }
+
+    /// <summary>
+    /// 新增考勤的 ViewModel
+    /// </summary>
+    public class AttendanceCreateViewModel
+    {
+        /// <summary>上班時間</summary>
+        public DateTime StartTime { get; set; }
+
+        /// <summary>下班時間</summary>
+        public DateTime EndTime { get; set; }
+
+        /// <summary>備註</summary>
+        public string Note { get; set; }
+
+        /// <summary>員工編號</summary>
+        public int EmployeeId { get; set; }
+
+        /// <summary>員工資料（導航屬性）</summary>
+        public Employee Employee { get; set; }
+
+        /// <summary>是否假日加班</summary>
+        public string IsHolidayWork { get; set; }
+    }
+
+    /// <summary>
+    /// 新增考勤驗證結果
+    /// </summary>
+    public class AttendanceCreateValidationResult
+    {
+        /// <summary>有錯誤的欄位名稱</summary>
+        public HashSet<string> FieldNames { get; set; } = new HashSet<string>();
+
+        /// <summary>錯誤訊息</summary>
+        public HashSet<string> Messages { get; set; } = new HashSet<string>();
+
+        /// <summary>
+        /// 新增欄位錯誤訊息
+        /// </summary>
+        /// <param name="fieldName">欄位名稱</param>
+        /// <param name="message">錯誤訊息</param>
+        public void Add(string fieldName, string message)
+        {
+            FieldNames.Add(fieldName);
+            Messages.Add(message);
+        }
+
+        /// <summary>是否有任何錯誤</summary>
+        public bool HasErrors => FieldNames.Any() || Messages.Any();
+    }
+}

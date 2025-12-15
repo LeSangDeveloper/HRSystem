@@ -1,0 +1,731 @@
+﻿@*
+    呈現考勤時間紀錄
+    可以刪除修改考勤紀錄
+    測試資料:
+    - Employee Id: 1, 2 or 3
+    - Department Id: 1, 2, 3
+*@
+@page
+@model AttendanceIndexModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Attendance";
+
+    // Breadcrumb for category page
+    ViewData["Breadcrumb"] = new List<(string Title, string Url, bool Active)>
+    {
+        ("Employee", "/Employees/Index", false),
+        ("Attendance", "/Employees/Attendance/Index", true)
+    };
+
+    // Function-level navigation
+    ViewBag.FunctionNav = new List<(string Title, string Url, bool Active)>
+    {
+        ("Attendance", "/Employees/Attendance/Index", true),
+        ("Create", "/Employees/Attendance/Create", false),
+    };
+
+    // Determine if there are any filters
+    bool hasFilter = !string.IsNullOrEmpty(ViewData["fromTime"] as string) ||
+                     !string.IsNullOrEmpty(ViewData["toTime"] as string) ||
+                     !string.IsNullOrEmpty(ViewData["employeeId"] as string) ||
+                     !string.IsNullOrEmpty(ViewData["departmentId"] as string);
+}
+
+<div class="row">
+
+    <!-- Query Criteria Card -->
+    <div class="col-12 mb-3">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Query Criteria</span>
+                <button class="btn btn-sm btn-outline-secondary arrow-toggle" type="button" data-toggle="collapse" data-target="#queryCardBody" aria-expanded="true" aria-controls="queryCardBody">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="collapse show" id="queryCardBody">
+                <div class="card-body">
+                    <form id="searchForm" method="post">
+                        @*
+                        Search Form Inputs (correspond to OnPostSearchAttendances parameters):
+                        - fromTime: DateTime? 起始時間
+                        - toTime: DateTime? 結束時間
+                        - employeeId: string 員工 ID
+                        - departmentId: string 部門 ID
+                        *@
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="timeFrom" class="form-label">Time From</label>
+                                <input type="date" name="fromTime" value="@ViewData["fromTime"]" class="form-control" id="timeFrom" />
+                            </div>
+                            <div class="col-md-3">
+                                <label for="timeTo" class="form-label">Time To</label>
+                                <input type="date" name="toTime" value="@ViewData["toTime"]" class="form-control" id="timeTo" />
+                            </div>
+                            <div class="col-md-3">
+                                <label for="employeeId" class="form-label">Employee ID</label>
+                                <input type="text" name="employeeId" value="@ViewData["employeeId"]" class="form-control" id="employeeId" placeholder="Enter ID" />
+                            </div>
+                            <div class="col-md-3">
+                                <label for="departmentId" class="form-label">Department ID</label>
+                                <input type="text" name="departmentId" value="@ViewData["departmentId"]" class="form-control" id="departmentId" placeholder="Enter Dept" />
+                            </div>
+                        </div>
+                    </form>
+
+                </div>
+                <div class="card-footer d-flex justify-content-center align-items-center gap-2">
+                    <button form="searchForm" asp-page="/Employees/Attendance/Index" asp-page-handler="SearchAttendances" type="submit" class="btn btn-primary mr-1">Search</button>
+                    <a class="btn btn-success" asp-page="/Employees/Attendance/Create" class="ml-1">Create</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @*
+        如果User有輸入任何查詢條件(hasFilter = true)才Show這一段
+    *@
+
+    @if (hasFilter)
+    {
+        <!-- Result Card -->
+        <div class="col-12 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Result</span>
+                    <button class="btn btn-sm btn-outline-secondary arrow-toggle" type="button" data-toggle="collapse" data-target="#resultCardBody" aria-expanded="true" aria-controls="resultCardBody">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div class="collapse show" id="resultCardBody">
+                    <div class="card-body">
+
+                        @if (Model.Attendances == null || !Model.Attendances.Any())
+                        {
+                            <div class="text-center text-muted py-5">
+                                <p>No results found.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <form method="post">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <div>
+                                        <button type="submit"
+                                                asp-page="/Employees/Attendance/Index" asp-page-handler="UpdateAttendance"
+                                                class="btn btn-primary btn-sm"
+                                                title="Save updated data">
+                                            <i class="fas fa-save"></i>
+                                        </button>
+
+                                        <button type="submit"
+                                                asp-page="/Employees/Attendance/Index" asp-page-handler="DeleteAttendance"
+                                                class="btn btn-danger btn-sm mx-2"
+                                                title="Delete selected data">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+
+                                        <div class="d-flex align-items-center gap-2">
+                                            @*
+                                                換頁東能
+                                            *@
+                                            <!-- First -->
+                                            <a asp-page="/Employees/Attendance/Index" asp-page-handler="ChangePage"
+                                            asp-route-pageIndex="1"
+                                            class="btn btn-outline-secondary btn-sm @(Model.CurrentPage == 1 ? "disabled" : "")">
+                                                &laquo;
+                                            </a>
+
+                                            <!-- Previous -->
+                                            <a asp-page="/Employees/Attendance/Index" asp-page-handler="ChangePage"
+                                            asp-route-pageIndex="@(Model.CurrentPage > 1 ? Model.CurrentPage - 1 : 1)"
+                                            class="btn btn-outline-secondary btn-sm @(Model.CurrentPage == 1 ? "disabled" : "")">
+                                                &lsaquo;
+                                            </a>
+
+                                            <!-- Current -->
+                                            <span class="px-3 fw-bold">
+                                                Page @Model.CurrentPage of @Model.LastPage
+                                            </span>
+                                            <input type="hidden" asp-for="CurrentPage" />
+
+                                            <!-- Next -->
+                                            <a asp-page="/Employees/Attendance/Index" asp-page-handler="ChangePage"
+                                            asp-route-pageIndex="@(Model.CurrentPage < Model.LastPage ? Model.CurrentPage + 1 : Model.LastPage)"
+                                            class="btn btn-outline-secondary btn-sm @(Model.CurrentPage == Model.LastPage ? "disabled" : "")">
+                                                &rsaquo;
+                                            </a>
+
+                                            <!-- Last -->
+                                            <a asp-page="/Employees/Attendance/Index" asp-page-handler="ChangePage"
+                                            asp-route-pageIndex="@Model.LastPage"
+                                            class="btn btn-outline-secondary btn-sm @(Model.CurrentPage == Model.LastPage ? "disabled" : "")">
+                                                &raquo;
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <table class="table table-bordered table-striped table-hover data-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col"><input type="checkbox" id="selectAll" /></th>
+                                            <th scope="col">Employee</th>
+                                            <th scope="col">Department</th>
+                                            <th scope="col">Start Time</th>
+                                            <th scope="col">End Time</th>
+                                            <th scope="col">Note</th>
+                                            <th scope="col">Holiday</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @*
+                                            @(hasError ? "has-error" : ""): 若儲存資料有問題, 在對應Input加has-error
+                                        *@
+                                        @for (int i = 0; i < Model.Attendances.Count; i++)
+                                        {
+                                            var att = Model.Attendances[i];
+                                            bool hasError = Model.AttendanceValidation?
+                                            .AttendanceIds.Contains(att.Id) == true;
+
+                                            <tr>
+                                                @*
+                                                    每列資料對應一筆考勤資料, 綁定的考勤更新(刪掉)列表
+                                                *@
+                                                <!-- Checkbox -->
+                                                <td>
+                                                    <input type="checkbox" asp-for="@Model.Attendances[i].isChecked" />
+                                                </td>
+
+                                                <!-- Hidden Id -->
+                                                <input type="hidden" asp-for="@Model.Attendances[i].Id" />
+
+                                                <!-- Hidden isUpdated -->
+                                                <input type="hidden" asp-for="@Model.Attendances[i].isUpdated" class="is-updated" />
+
+                                                <input type="hidden" asp-for="@Model.Attendances[i].EmployeeId" readonly />
+
+                                                <td>
+                                                    @att.Employee.Name
+                                                </td>
+
+                                                <td>
+                                                    @att.Employee.Deparment.Name
+                                                </td>
+
+                                                <td>
+                                                    <input type="datetime-local"
+                                                           class="form-control track-change @(hasError ? "has-error" : "")"
+                                                           asp-for="@Model.Attendances[i].StartTime"
+                                                           data-ori-value="@att.StartTime.ToString("yyyy-MM-ddTHH:mm")" />
+                                                </td>
+
+                                                <td>
+                                                    <input type="datetime-local"
+                                                           class="form-control track-change @(hasError ? "has-error" : "")"
+                                                           asp-for="@Model.Attendances[i].EndTime"
+                                                           data-ori-value="@att.EndTime.ToString("yyyy-MM-ddTHH:mm")" />
+                                                </td>
+
+                                                <td>
+                                                    <input type="text"
+                                                    class="form-control track-change"
+                                                    asp-for="@Model.Attendances[i].Note"
+                                                    data-ori-value="@att.Note" />
+                                                </td>
+
+                                                <td>
+                                                    <select class="form-select form-select-sm track-change"
+                                                    asp-for="@Model.Attendances[i].IsHolidayWork"
+                                                    data-ori-value="@att.IsHolidayWork">
+                                                        <option value="Y">Y</option>
+                                                        <option value="N">N</option>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th colspan="3">Total Working Hours</th>
+                                            <th colspan="4">@Model.TotalWorkingHours.ToString("F2")</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @*
+        若處理資料有錯誤會Show在這裡
+    *@
+    @if (Model.AttendanceValidation?.Messages?.Any() == true)
+    {
+        <div class="modal fade" id="errorModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">Attendance Validation Errors</h5>
+                    </div>
+                    <div class="modal-body">
+                        <ul>
+                            @foreach (var msg in Model.AttendanceValidation.Messages)
+                            {
+                                <li>@msg</li>
+                            }
+                        </ul>
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+    <script>
+        $(document).on('change input', '.track-change', function () {
+            const $row = $(this).closest('tr');
+            let isUpdated = false;
+
+            $row.find('.track-change').each(function () {
+                const ori = $(this).data('ori-value');
+                const cur = $(this).val();
+
+                if ((ori ?? '') != (cur ?? '')) {
+                    isUpdated = true;
+                    return false; // break loop
+                }
+            });
+
+            $row.find('.is-updated').val(isUpdated);
+        });
+
+        // Select all checkbox (keep your existing logic)
+        $('#selectAll').click(function () {
+            $('input[type=checkbox]').prop('checked', this.checked);
+        });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const modal = new bootstrap.Modal(document.getElementById('errorModal'));
+        modal.show();
+        }); document.addEventListener("DOMContentLoaded", function () {
+            const modal = new bootstrap.Modal(document.getElementById('errorModal'));
+            modal.show();
+        });
+    </script>
+}
+
+@functions {
+
+    /// <summary>
+    /// 考勤紀錄列表 PageModel
+    /// 可以查詢、修改與刪除考勤資料
+    /// </summary>
+    public class AttendanceIndexModel : PageModel
+    {
+        private readonly DataContext _context;
+
+        private const int PageSize = 5;
+        private const string SessionPrefix = nameof(AttendanceIndexModel);
+
+        /// <summary>總頁數</summary>
+        public int LastPage { get; private set; } = 1;
+
+        /// <summary>考勤驗證結果</summary>
+        public AttendanceIndexValidationResult AttendanceValidation { get; set; }
+
+        /// <summary>總工作時數</summary>
+        public double TotalWorkingHours { get; set; } = 0;
+
+        /// <summary>建構子，注入資料上下文</summary>
+        public AttendanceIndexModel(DataContext context)
+        {
+            _context = context;
+        }
+
+        /// <summary>綁定的考勤更新列表</summary>
+        [BindProperty]
+        public List<AttendanceUpdateViewModel> Attendances { get; set; }
+
+        /// <summary>當前頁碼</summary>
+        [BindProperty]
+        public int? CurrentPage { get; set; } = 1;
+
+        /// <summary>
+        /// GET 請求：初始化考勤列表、查詢條件與分頁
+        /// </summary>
+        public void OnGet()
+        {
+            if (TempData.ContainsKey("AttendanceValidation"))
+            {
+                AttendanceValidation =
+                    System.Text.Json.JsonSerializer.Deserialize<AttendanceIndexValidationResult>(
+                        TempData["AttendanceValidation"] as string
+                    );
+            }
+
+            var fromTimeStrTemp = TempData["fromTime"] as string;  // stored as "yyyyMMdd"
+            var toTimeStrTemp = TempData["toTime"] as string;
+
+            // Parse from "yyyyMMdd" to DateTime
+            DateTime? fromTime = null;
+            DateTime? toTime = null;
+
+            if (!string.IsNullOrEmpty(fromTimeStrTemp) &&
+                DateTime.TryParseExact(fromTimeStrTemp, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var ft))
+            {
+                fromTime = ft;
+            }
+
+            if (!string.IsNullOrEmpty(toTimeStrTemp) &&
+                DateTime.TryParseExact(toTimeStrTemp, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var tt))
+            {
+                toTime = tt;
+            }
+
+            // Assign to ViewData in "yyyy-MM-dd" format for HTML input
+            ViewData["fromTime"] = fromTime?.ToString("yyyy-MM-dd") ?? "";
+            ViewData["toTime"] = toTime?.ToString("yyyy-MM-dd") ?? "";
+
+            // Get other filters
+            var pageStr = TempData["page"] as string;
+            var employeeIdStr = TempData["employeeId"] as string;
+            var departmentIdStr = TempData["departmentId"] as string;
+
+            if (!int.TryParse(pageStr, out int page) || page < 1)
+                page = 1;
+
+            ViewData["employeeId"] = employeeIdStr;
+            ViewData["departmentId"] = departmentIdStr;
+            ViewData["page"] = page;
+            CurrentPage = page;
+
+            // Query database
+            if (!string.IsNullOrEmpty(fromTimeStrTemp) ||
+                !string.IsNullOrEmpty(toTimeStrTemp) ||
+                !string.IsNullOrEmpty(employeeIdStr) ||
+                !string.IsNullOrEmpty(departmentIdStr))
+            {
+                SaveSearchConditionsToSession(fromTimeStrTemp, toTimeStrTemp, employeeIdStr, departmentIdStr);
+                var query = _context.AttendancesWithEmployeeAndDepartment().AsQueryable();
+
+                if (fromTime.HasValue && toTime.HasValue)
+                {
+                    query = query.Where(a =>
+                        a.StartTime <= toTime.Value && a.EndTime >= fromTime.Value);
+                }
+                else if (fromTime.HasValue)
+                {
+                    query = query.Where(a => a.StartTime >= fromTime.Value);
+                }
+                else if (toTime.HasValue)
+                {
+                    query = query.Where(a => a.EndTime <= toTime.Value);
+                }
+
+                if (!string.IsNullOrEmpty(employeeIdStr) && int.TryParse(employeeIdStr, out int empId))
+                {
+                    query = query.Where(a => a.EmployeeId == empId);
+                }
+
+                if (!string.IsNullOrEmpty(departmentIdStr) && int.TryParse(departmentIdStr, out int deptId))
+                {
+                    query = query.Where(a => a.Employee.DepartmentId == deptId);
+                }
+
+                // Fetch all filtered records (not paginated) into memory
+                var allFilteredRecords = query.ToList();
+
+                // Compute total working hours
+                TotalWorkingHours = allFilteredRecords.Sum(a => (a.EndTime - a.StartTime).TotalHours);
+
+                // Paginate for display
+                var totalRecords = allFilteredRecords.Count;
+                LastPage = (int)Math.Ceiling(totalRecords / (double)PageSize);
+                if (LastPage == 0) LastPage = 1;
+
+                Attendances = allFilteredRecords
+                    .OrderBy(a => a.StartTime)
+                    .Skip((CurrentPage.GetValueOrDefault(1) - 1) * PageSize)
+                    .Take(PageSize)
+                    .Select(a => new AttendanceUpdateViewModel
+                        {
+                            Id = a.Id,
+                            StartTime = a.StartTime,
+                            EndTime = a.EndTime,
+                            Note = a.Note,
+                            EmployeeId = a.EmployeeId,
+                            Employee = a.Employee,
+                            IsHolidayWork = a.IsHolidayWork
+                        })
+                    .ToList();
+            }
+        }
+
+        /// <summary>
+        /// POST 請求：依條件查詢考勤紀錄
+        /// </summary>
+        /// <param name="fromTime">查詢起始時間</param>
+        /// <param name="toTime">查詢結束時間</param>
+        /// <param name="employeeId">員工 ID</param>
+        /// <param name="departmentId">部門</param>
+        /// <returns>重新導向到考勤列表頁面的 IActionResult</returns>
+        public IActionResult OnPostSearchAttendances(DateTime? fromTime, DateTime? toTime, string employeeId, string departmentId)
+        {
+            String fromTimeStr = fromTime?.ToString("yyyyMMdd");
+            String toTimeStr = toTime?.ToString("yyyyMMdd");
+            TempData["fromTime"] = fromTimeStr;
+            TempData["toTime"] = toTimeStr;
+            TempData["employeeId"] = employeeId;
+            TempData["departmentId"] = departmentId;
+
+            var fromTimeStr2 = TempData.Peek("fromTime") as string;
+            Console.WriteLine($"fromTimeStr: '{fromTimeStr2}'"); // Should show the value
+
+            return RedirectToPage();
+        }
+
+        /// <summary>
+        /// GET 請求：分頁變更
+        /// </summary>
+        /// <param name="pageIndex">目標頁碼 (From query string of Get method)</param>
+        /// <returns>重新導向到指定頁面的 IActionResult</returns>
+        public IActionResult OnGetChangePage(int pageIndex)
+        {
+            if (pageIndex < 1)
+                pageIndex = 1;
+
+            String fromTime = GetSessionValue("fromTime");
+            String toTime = GetSessionValue("toTime");
+            String employeeId = GetSessionValue("employeeId");
+            String departmentId = GetSessionValue("departmentId");
+
+            TempData["fromTime"] = fromTime;
+            TempData["toTime"] = toTime;
+            TempData["employeeId"] = employeeId;
+            TempData["departmentId"] = departmentId;
+            TempData["page"] = pageIndex.ToString();
+
+            return RedirectToPage();
+        }
+
+        /// <summary>
+        /// POST 請求：更新考勤資料
+        /// 若更新成功，會重新導向回目前頁面，保持分頁位置
+        /// </summary>
+        /// <returns>重新導向到當前頁面的 IActionResult</returns>
+        public IActionResult OnPostUpdateAttendance()
+        {
+            var validation = new AttendanceIndexValidationResult();
+
+            if (Attendances != null && Attendances.Any())
+            {
+                foreach (var att in Attendances)
+                {
+                    if (!att.isUpdated)
+                        continue;
+
+                    // ❌ Start >= End
+                    if (att.StartTime >= att.EndTime)
+                    {
+                        validation.AttendanceIds.Add(att.Id);
+                        validation.Messages.Add("Start time must be before end time");
+                        continue;
+                    }
+
+                    // ❌ Not same day
+                    if (att.StartTime.Date != att.EndTime.Date)
+                    {
+                        validation.AttendanceIds.Add(att.Id);
+                        validation.Messages.Add("Start time and end time must be on the same day");
+                        continue;
+                    }
+
+                    var existing = _context.Attendances.FirstOrDefault(a => a.Id == att.Id);
+                    if (existing == null)
+                        continue;
+
+                    // ❌ Conflict
+                    bool hasConflict = _context.Attendances.Any(a =>
+                        a.Id != att.Id &&
+                        a.EmployeeId == att.EmployeeId &&
+                        a.StartTime < att.EndTime &&
+                        a.EndTime > att.StartTime
+                    );
+
+                    if (hasConflict)
+                    {
+                        validation.AttendanceIds.Add(att.Id);
+                        validation.Messages.Add("Attendance time conflicts with existing record");
+                        continue;
+                    }
+
+                    // ✅ Update
+                    existing.StartTime = att.StartTime;
+                    existing.EndTime = att.EndTime;
+                    existing.Note = att.Note;
+                    existing.IsHolidayWork = att.IsHolidayWork;
+                }
+
+                _context.SaveAsync().Wait();
+            }
+
+            // 🔥 Save validation result only if errors exist
+            if (validation.AttendanceIds.Any())
+            {
+                TempData["AttendanceValidation"] =
+                    System.Text.Json.JsonSerializer.Serialize(validation);
+            }
+
+            // keep filters & paging
+            TempData["page"] = CurrentPage.ToString();
+            TempData["fromTime"] = GetSessionValue("fromTime");
+            TempData["toTime"] = GetSessionValue("toTime");
+            TempData["employeeId"] = GetSessionValue("employeeId");
+            TempData["departmentId"] = GetSessionValue("departmentId");
+
+            return RedirectToPage();
+        }
+
+        /// <summary>
+        /// POST 請求：刪除選中的考勤紀錄
+        /// </summary>
+        /// <returns>重新導向到當前頁面的 IActionResult</returns>
+        public async Task<IActionResult> OnPostDeleteAttendance()
+        {
+            if (Attendances != null && Attendances.Any())
+            {
+                foreach (var att in Attendances)
+                {
+                    if (att.isChecked)
+                    {
+                        await _context.DeleteAttendanceByIdAsync(att.Id);
+                    }
+                }
+            }
+
+            String fromTime = GetSessionValue("fromTime");
+            String toTime = GetSessionValue("toTime");
+            String employeeId = GetSessionValue("employeeId");
+            String departmentId = GetSessionValue("departmentId");
+
+            TempData["fromTime"] = fromTime;
+            TempData["toTime"] = toTime;
+            TempData["employeeId"] = employeeId;
+            TempData["departmentId"] = departmentId;
+
+            return RedirectToPage();
+        }
+
+        /// <summary>
+        /// 儲存查詢條件至 Session
+        /// </summary>
+        private void SaveSearchConditionsToSession(
+            string fromTime,
+            string toTime,
+            string employeeId,
+            string departmentId)
+        {
+            SetSessionValue("fromTime", fromTime);
+            SetSessionValue("toTime", toTime);
+            SetSessionValue("employeeId", employeeId);
+            SetSessionValue("departmentId", departmentId);
+        }
+
+        /// <summary>
+        /// 設定 Session 值
+        /// </summary>
+        private void SetSessionValue(string key, string value)
+        {
+            HttpContext.Session.SetString($"{SessionPrefix}_{key}", value ?? string.Empty);
+        }
+
+        /// <summary>
+        /// 取得 Session 值
+        /// </summary>
+        private string GetSessionValue(string key)
+        {
+            return HttpContext.Session.GetString($"{SessionPrefix}_{key}");
+        }
+
+    }
+
+    /// <summary>
+    /// 考勤更新 ViewModel，用於前端更新或刪除考勤資料
+    /// </summary>
+    public class AttendanceUpdateViewModel
+    {
+        /// <summary>
+        /// 考勤資料唯一識別 ID
+        /// </summary>
+        public int Id { get; set; }
+
+        /// <summary>
+        /// 是否勾選此列，主要用於批次刪除
+        /// </summary>
+        public bool isChecked { get; set; }
+
+        /// <summary>
+        /// 標記此列資料是否被修改，用於判斷是否需要更新資料庫
+        /// </summary>
+        public bool isUpdated { get; set; }
+
+        /// <summary>
+        /// 上班時間
+        /// </summary>
+        public DateTime StartTime { get; set; }
+
+        /// <summary>
+        /// 下班時間
+        /// </summary>
+        public DateTime EndTime { get; set; }
+
+        /// <summary>
+        /// 備註欄位，可用於記錄額外說明
+        /// </summary>
+        public string Note { get; set; }
+
+        /// <summary>
+        /// 員工 ID，用於關聯 Employee
+        /// </summary>
+        public int EmployeeId { get; set; }
+
+        /// <summary>
+        /// 員工資料，包含姓名與部門等資訊
+        /// </summary>
+        public Employee Employee { get; set; }
+
+        /// <summary>
+        /// 是否假日工作 (Y/N)
+        /// </summary>
+        public string IsHolidayWork { get; set; }
+    }
+
+    /// <summary>
+    /// 考勤列表驗證結果，用於回傳前端驗證錯誤
+    /// </summary>
+    public class AttendanceIndexValidationResult
+    {
+        /// <summary>
+        /// 驗證失敗的考勤 ID 清單，用於標示哪幾列資料有錯誤
+        /// </summary>
+        public HashSet<int> AttendanceIds { get; set; } = new HashSet<int>();
+
+        /// <summary>
+        /// 驗證錯誤訊息集合，可多條，用於前端顯示錯誤
+        /// </summary>
+        public HashSet<string> Messages { get; set; } = new HashSet<string>();
+    }
+
+
+}

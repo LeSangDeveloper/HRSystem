@@ -1,0 +1,24 @@
+﻿@*
+    Errors網頁Layout
+    每個網頁內容放在RenderBody
+*@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title</title>
+
+    <link href="/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

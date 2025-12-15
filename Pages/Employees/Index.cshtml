@@ -1,0 +1,57 @@
+﻿@*
+    呈現一些人員(Employees)資訊網頁功能
+*@
+@page
+@{
+    Layout = "_LayoutCategory";
+    ViewData["Title"] = "Employees";
+
+    // Breadcrumbs: Title, URL (Razor Page), Active?
+    ViewData["Breadcrumb"] = new List<(string Title, string Url, bool Active)>
+    {
+        ("Employee", "/Employees/Index", true)
+    };
+}
+
+<h2 class="text-primary mb-3 text-center">Employee Management</h2>
+
+<div class="row justify-content-center mt-4">
+    <!-- Attendance Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card border shadow-sm h-100 text-center">
+            <div class="card-body d-flex flex-column justify-content-between">
+                <h5 class="card-title">Attendance</h5>
+                <p class="card-text text-muted">View and manage employee attendance records</p>
+                <a asp-page="/Employees/Attendance/Index" class="btn btn-outline-primary btn-sm mt-3">
+                    Open
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leave-off Card (Placeholder) -->
+    <div class="col-md-4 mb-4">
+        <div class="card border shadow-sm h-100 text-center">
+            <div class="card-body d-flex flex-column justify-content-between">
+                <h5 class="card-title">Leave-off</h5>
+                <p class="card-text text-muted">Manage leave requests (coming soon)</p>
+                <button class="btn btn-outline-secondary btn-sm mt-3" disabled>
+                    Coming Soon
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations Card (Placeholder) -->
+    <div class="col-md-4 mb-4">
+        <div class="card border shadow-sm h-100 text-center">
+            <div class="card-body d-flex flex-column justify-content-between">
+                <h5 class="card-title">Informations</h5>
+                <p class="card-text text-muted">Employee details and profile management</p>
+                <button class="btn btn-outline-secondary btn-sm mt-3" disabled>
+                    Coming Soon
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

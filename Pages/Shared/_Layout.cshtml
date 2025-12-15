@@ -1,0 +1,105 @@
+﻿@*
+    預設網頁Layout (設定在 _ViewStart)
+    每個網頁內容放在RenderBody
+*@
+@{
+    var title = ViewData["Title"] ?? "HR System";
+    var functionNav = ViewBag.FunctionNav as List<(string Title, string Url, bool Active)>;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="/lib/bootstrap/dist/css/bootstrap.css" rel="stylesheet" />
+    <link href="/lib/fontawesome/css/all.css" rel="stylesheet" />
+    <link href="/css/common.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+
+    <!-- Function Header Navbar -->
+    @if (functionNav != null && functionNav.Count > 0)
+    {
+        var master = functionNav[0];
+
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <!-- Master item as brand -->
+                <a class="navbar-brand" asp-page="@master.Url">@master.Title</a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#functionNavbar" aria-controls="functionNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="functionNavbar">
+                    <ul class="navbar-nav me-auto">
+                        @foreach (var item in functionNav.Skip(1))
+                        {
+                            <li class="nav-item">
+                                @if (item.Active)
+                                {
+                                    <span class="nav-link active">@item.Title</span>
+                                }
+                                else
+                                {
+                                    <a class="nav-link" asp-page="@item.Url">@item.Title</a>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    }
+
+    <!-- Breadcrumb -->
+    <div class="container mt-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a asp-page="/Index">HR System</a>
+                </li>
+
+                @if (ViewData["Breadcrumb"] != null)
+                {
+                    var crumbs = (List<(string Title, string Url, bool Active)>)ViewData["Breadcrumb"];
+                    foreach (var crumb in crumbs)
+                    {
+                        if (crumb.Active)
+                        {
+                            <li class="breadcrumb-item active" aria-current="page">@crumb.Title</li>
+                        }
+                        else
+                        {
+                            <li class="breadcrumb-item">
+                                <a asp-page="@crumb.Url">@crumb.Title</a>
+                            </li>
+                        }
+                    }
+                }
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mt-3">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-muted mt-5 mb-3">
+        © @DateTime.Now.Year HR System
+    </footer>
+
+    <!-- jQuery first -->
+    <script src="/lib/jquery/dist/jquery.min.js"></script>
+
+    <!-- Then Bootstrap 4 JS -->
+    <script src="/lib/bootstrap/dist/js/bootstrap.min.js"></script>
+
+    @RenderSection("Scripts", false);
+
+</body>
+</html>

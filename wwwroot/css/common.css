@@ -1,0 +1,90 @@
+﻿html, body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1; /* take all available space between navbar and footer */
+}
+
+input.has-error,
+select.has-error {
+    background-color: #ffe6e6 !important;
+    border: 2px solid #dc3545 !important;
+}
+
+/* Rotate arrow using CSS based on collapse state */
+.arrow-toggle i {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+/* When target is hidden, rotate 180deg */
+.collapse:not(.show) + .card-footer,
+.collapse:not(.show) ~ .card-body,
+/* for the arrow button, we will use Bootstrap ARIA-expanded attr */
+.arrow-toggle[aria-expanded="false"] i {
+    transform: rotate(180deg);
+}
+
+/* ===== Global Table Styles ===== */
+
+/* Table header */
+table.data-table thead th {
+    background-color: #e9ecef; /* Bootstrap light gray */
+    font-weight: 600; /* Bold but not too heavy */
+    color: #212529;
+    vertical-align: middle;
+    border-color: #dee2e6;
+}
+
+/* Table body */
+table.data-table thead th {
+    background-color: #f8f9fa; /* Very light gray */
+    vertical-align: middle;
+}
+
+/* Table foot */
+table.data-table tfoot th {
+    background-color: #f8f9fa; /* Very light gray */
+    vertical-align: middle;
+}
+
+/* Hover effect (optional but nice) */
+table.data-table.table-hover tbody tr:hover td {
+    background-color: #e2e6ea;
+}
+
+/* Inputs inside table */
+table.data-table input.form-control,
+table.data-table select.form-select {
+    background-color: #ffffff;
+}
+
+/* Optional: align checkbox nicely */
+table.data-table input[type="checkbox"] {
+    transform: scale(1.1);
+}
+
+/* === MODAL === */
+.modal-backdrop.show {
+    opacity: 0.7;
+}
+
+.custom-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1040;
+}
+
+.modal {
+    z-index: 1050;
+}
