@@ -22,7 +22,7 @@ This project is a basic HR web application created for learning and demonstratio
 ### Prerequisites
 
 * .NET Core SDK 3.1
-* Visual Studio 2019 / Visual Studio Code
+* Visual Studio 2022 / Visual Studio Code
 
 ### Clone the Repository
 
