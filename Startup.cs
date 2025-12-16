@@ -11,10 +11,10 @@ namespace HRSystem
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
-        {    // Register singleton for mock data
+        {    // 註冊模擬資料庫服務
             services.AddSingleton<Data>();
 
-            // Register DataContext as scoped
+            // 註冊模擬Data Context服務
             services.AddScoped<DataContext>();
             services.AddRazorPages(); // 註冊Razor Page Servcies
             services.AddDistributedMemoryCache(); // 必要的後端儲機制
